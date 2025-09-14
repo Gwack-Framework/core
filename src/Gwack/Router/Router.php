@@ -209,6 +209,11 @@ class Router implements RouterInterface
     {
         $method = strtoupper($method);
 
+        // remove trailing slashes (except for root)
+        if ($uri !== '/' && str_ends_with($uri, '/')) {
+            $uri = rtrim($uri, '/');
+        }
+
         // Compile routes if necessary
         if (!$this->routesCompiled) {
             $this->compileRoutes();
@@ -227,9 +232,7 @@ class Router implements RouterInterface
             $allowedMethods = $this->getAllowedMethods($uri);
             if (!empty($allowedMethods)) {
                 return [
-                    function () use ($allowedMethods) {
-                        return ['Allow' => implode(', ', $allowedMethods)];
-                    },
+                    fn() => ['Allow' => implode(', ', $allowedMethods)],
                     []
                 ];
             }
@@ -269,6 +272,11 @@ class Router implements RouterInterface
      */
     public function getAllowedMethods(string $uri): array
     {
+        // Normalize URI: remove trailing slashes (except for root)
+        if ($uri !== '/' && str_ends_with($uri, '/')) {
+            $uri = rtrim($uri, '/');
+        }
+
         $allowedMethods = [];
 
         foreach ($this->compiledRoutes['static'] as $method => $routes) {
