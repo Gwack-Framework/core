@@ -244,18 +244,6 @@ return function() {
 };
 ```
 
-### Custom Functions
-
-```php
-// Register custom functions
-$app->bindFunction('myHelper', function($param) {
-    return "Processed: {$param}";
-});
-
-// Use in routes
-return fn() => json(['result' => myHelper('test')]);
-```
-
 ## 📝 Requirements
 
 - **PHP**: 8.3 or higher
