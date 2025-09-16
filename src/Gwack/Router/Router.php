@@ -5,6 +5,7 @@ namespace Gwack\Router;
 use Gwack\Router\Interfaces\RouterInterface;
 use Gwack\Router\Interfaces\CacheInterface;
 use Gwack\Router\Interfaces\RouteCollectionInterface;
+use Gwack\Router\Interfaces\RouteInterface;
 
 /**
  * HTTP router for the Qwack framework
@@ -447,7 +448,8 @@ class Router implements RouterInterface
             $cacheable['static'][$method] = [];
             foreach ($routes as $path => $route) {
                 $cacheable['static'][$method][$path] = [
-                    'pattern' => $route->getPattern(),
+                    // Store the route path as the pattern identifier for cache lookups
+                    'pattern' => $route->getPath(),
                     'parameters' => $route->getParameterNames(),
                     'paramConstraints' => $route->getParameterConstraints()
                 ];
@@ -466,7 +468,8 @@ class Router implements RouterInterface
                 if ($group['type'] === 'single') {
                     $route = $group['route'];
                     $cacheable['dynamic'][$method][$segment]['route'] = [
-                        'pattern' => $route->getPattern(),
+                        // Store the route path as the pattern identifier for cache lookups
+                        'pattern' => $route->getPath(),
                         'parameters' => $route->getParameterNames(),
                         'paramConstraints' => $route->getParameterConstraints()
                     ];
@@ -476,7 +479,8 @@ class Router implements RouterInterface
                     foreach ($group['routeMap'] as $index => $routeData) {
                         $route = $routeData['route'];
                         $cacheable['dynamic'][$method][$segment]['routeMap'][$index] = [
-                            'pattern' => $route->getPattern(),
+                            // Store the route path as the pattern identifier for cache lookups
+                            'pattern' => $route->getPath(),
                             'parameters' => $route->getParameterNames(),
                             'paramConstraints' => $route->getParameterConstraints()
                         ];
@@ -572,13 +576,13 @@ class Router implements RouterInterface
      * Find a route in the collection by method and pattern
      *
      * @param string $method
-     * @param string $pattern
-     * @return Route|null
+     * @param string $path
+     * @return RouteInterface|null
      */
-    private function findRouteInCollection(string $method, string $pattern): ?Route
+    private function findRouteInCollection(string $method, string $path): ?RouteInterface
     {
         foreach ($this->routes->all() as $route) {
-            if ($route->getMethod() === $method && $route->getPattern() === $pattern) {
+            if ($route->getMethod() === $method && $route->getPath() === $path) {
                 return $route;
             }
         }
@@ -634,7 +638,9 @@ class Router implements RouterInterface
      */
     public function addNamedRoute(string $method, string $path, callable $handler, string $name, array $options = []): self
     {
-        $this->routes->addNamed($name, $method, $path, $handler, $options);
+        // Create route and add it with a name using the interface-supported method
+        $route = new Route($method, $path, $handler, $options);
+        $this->routes->add($route, $name);
         $this->routesCompiled = false;
         return $this;
     }
@@ -643,11 +649,11 @@ class Router implements RouterInterface
      * Get a named route
      *
      * @param string $name Route name
-     * @return Route|null
+     * @return RouteInterface|null
      */
-    public function getNamedRoute(string $name): ?Route
+    public function getNamedRoute(string $name): ?RouteInterface
     {
-        return $this->routes->getNamed($name);
+        return $this->routes->get($name);
     }
 
     /**
@@ -658,7 +664,7 @@ class Router implements RouterInterface
      */
     public function hasNamedRoute(string $name): bool
     {
-        return $this->routes->hasNamed($name);
+        return $this->routes->has($name);
     }
 
     /**
